@@ -3,5 +3,5 @@
  * @type {{apiBase: string}}
  */
 window.GLANCE_CONFIG = {
-  apiBase: '',
+  apiBase: 'https://glance-web.onrender.com',
 };
