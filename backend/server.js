@@ -389,6 +389,10 @@ function createApp() {
     response.sendFile(path.join(projectRoot, 'index.html'));
   });
 
+  app.get('/demo', (request, response) => {
+    response.sendFile(path.join(projectRoot, 'demo.html'));
+  });
+
   app.use((error, request, response, next) => {
     logger.error('未处理异常', error.message);
     response.status(500).json({
