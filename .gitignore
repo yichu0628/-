@@ -1,0 +1,12 @@
+venv/
+.env
+__pycache__/
+*.pyc
+*.db
+temp_screenshots/
+build/
+dist/
+test_tasks.db
+screenshot_temp.png
+node_modules/
+data/web-data.json

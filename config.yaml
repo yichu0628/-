@@ -1,0 +1,101 @@
+# 流光 Glance - PC端配置文件
+# 请根据实际情况填写以下配置项
+# 文档参考：https://platform.stepfun.com/docs/zh/guides/basic-concepts
+
+# 大模型 API 配置（OpenAI 兼容格式）
+# 阶跃星辰 API 兼容 OpenAI SDK，只需修改 base_url 和 api_key 即可迁移
+# 参考文档：https://platform.stepfun.com/docs/zh/guides/developer/openai
+llm:
+  # API 基础地址（阶跃星辰官方地址）
+  base_url: "https://api.stepfun.com/v1"
+  # API 密钥（请替换为您的实际密钥，在 https://platform.stepfun.com 后台创建）
+  api_key: "3RglQmZu7NwHEPvJzpSQPytWt9ejjfqmn85183c3c38loKztXaJOL8wdmJJaX5Lzx"
+  # 推荐模型：
+  #   step-1o-turbo-vision  - 推荐使用，速度快，视觉能力强
+  #   step-1o-vision-32k    - 更强视觉性能，上下文32k
+  #   step-1v               - 经典视觉模型，上下文8k/32k
+  model: "step-1o-turbo-vision"
+
+# MQTT 服务器配置
+mqtt:
+  # MQTT Broker 地址（默认使用 EMQX 公共测试服务器）
+  broker: "broker.emqx.io"
+  # MQTT Broker 端口
+  port: 1883
+  # 订阅/发布主题
+  topic: "glance/tasks"
+  # 客户端ID（建议使用唯一标识）
+  client_id: "glance_pc_client"
+  # 用户名（公共服务器通常不需要）
+  username: ""
+  # 密码（公共服务器通常不需要）
+  password: ""
+
+# 截图监听配置
+screenshot:
+  # 截图快捷键（格式：ctrl+shift+s）
+  hotkey: "ctrl+shift+s"
+  # 临时保存目录
+  temp_dir: "./temp_screenshots"
+  # 是否监听剪贴板截图
+  watch_clipboard: true
+
+# TTS 语音合成配置（阶跃星辰）
+# 参考文档：https://platform.stepfun.com/docs/zh/guides/developer/tts
+# API 调用示例：
+#   curl --location 'https://api.stepfun.com/v1/audio/speech' \
+#   --header 'Content-Type: application/json' \
+#   --header "Authorization: Bearer $STEP_API_KEY" \
+#   --data '{"model":"step-tts-mini","input":"你好","voice":"cixingnansheng"}' \
+#   --output "output.mp3"
+tts:
+  # 是否启用语音播报
+  enabled: true
+  # API 地址（阶跃星辰 TTS 接口）
+  base_url: "https://api.stepfun.com/v1/audio/speech"
+  # API 密钥（与大模型使用同一个 API Key 即可）
+  api_key: "3RglQmZu7NwHEPvJzpSQPytWt9ejjfqmn85183c3c38loKztXaJOL8wdmJJaX5Lzx"
+  # 可选模型：
+  #   step-tts-2     - 最新版，情绪风格可控度更强，音色复刻效果更好（推荐）
+  #   step-tts-mini  - 高性价比，支持11种情绪7种风格
+  #   step-tts-vivid - 真人感极强，适合外呼场景
+  model: "step-tts-2"
+  # 音色 Voice ID（推荐用于语音助手场景）
+  # 可选音色（部分）：
+  #   elegantgentle-female  - 气质温婉（推荐语音助手）
+  #   livelybreezy-female   - 活力轻快
+  #   cixingnansheng        - 磁性男声
+  #   wenrounansheng        - 温柔男声
+  #   qingchunshaonv        - 清纯少女
+  #   ruyananshi            - 儒雅男士
+  # 完整音色列表见：https://platform.stepfun.com/docs/zh/guides/developer/tts
+  voice: "elegantgentle-female"
+  # 输出格式：mp3 / wav / flac / opus
+  output_format: "mp3"
+  # 语速（0.5 - 2.0）
+  speed: 1.0
+
+# 语音交互配置
+# 当前实现：
+# 1. 麦克风输入使用 Windows 本地语音识别
+# 2. 识别结果交给大模型生成回复
+# 3. 回复结果通过 TTS 朗读
+voice:
+  # 是否启用语音交互
+  enabled: true
+  # 单次监听时长（秒）
+  listen_timeout_seconds: 8
+
+# 任务提醒配置
+reminder:
+  # 提前多少小时提醒（截止时间前）
+  advance_hours: 24
+  # 连续工作多久提醒（分钟）
+  work_duration_minutes: 60
+  # 提醒间隔（分钟）
+  interval_minutes: 30
+
+# 数据库配置
+database:
+  # 本地数据库路径
+  path: "./glance_tasks.db"

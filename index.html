@@ -1,0 +1,1368 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>流光 Glance 网页版</title>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    :root {
+      --bg: #fbfbfd;
+      --panel: #ffffff;
+      --line: #e5e5ea;
+      --text: #1d1d1f;
+      --muted: #86868b;
+      --accent: #0071e3;
+      --accent-hover: #0077ed;
+      --ok: #34c759;
+      --warn: #ff9f0a;
+      --danger: #ff3b30;
+      --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
+      --shadow-md: 0 4px 24px rgba(0, 0, 0, 0.08);
+      --radius: 18px;
+      --font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", "PingFang SC", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--text);
+      font-family: var(--font-family);
+      background: var(--bg);
+      line-height: 1.5;
+    }
+
+    #glanceCanvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .shell {
+      position: relative;
+      z-index: 1;
+      width: min(1440px, calc(100vw - 48px));
+      margin: 0 auto;
+      padding: 40px 0 80px;
+    }
+
+    .status-bar {
+      position: sticky;
+      top: 16px;
+      z-index: 20;
+      display: none;
+      margin-bottom: 24px;
+      padding: 14px 20px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--line);
+      color: var(--text);
+      box-shadow: var(--shadow-md);
+      font-weight: 500;
+      text-align: center;
+    }
+
+    .status-bar.show {
+      display: block;
+    }
+
+    .status-bar.error {
+      background: rgba(255, 59, 48, 0.1);
+      border-color: rgba(255, 59, 48, 0.2);
+      color: var(--danger);
+    }
+
+    .hero,
+    .main-grid {
+      display: grid;
+      gap: 32px;
+    }
+
+    .hero {
+      grid-template-columns: 360px 1fr;
+      margin-bottom: 32px;
+    }
+
+    .main-grid {
+      grid-template-columns: 1.5fr 1fr;
+    }
+
+    .stack {
+      display: grid;
+      gap: 32px;
+    }
+
+    .panel {
+      border-radius: var(--radius);
+      border: 1px solid var(--line);
+      background: var(--panel);
+      box-shadow: var(--shadow-sm);
+      overflow: hidden;
+    }
+
+    .content {
+      padding: 32px;
+    }
+
+    .hero-card {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      background: linear-gradient(145deg, #ffffff 0%, #f5f5f7 100%);
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .brand i {
+      color: var(--accent);
+      width: 18px;
+      height: 18px;
+    }
+
+    h1, h2, h3, h4, p {
+      margin: 0;
+    }
+
+    h1 {
+      margin: 16px 0 12px;
+      font-size: 32px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+    }
+
+    h2 {
+      font-size: 22px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+
+    h3 {
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .hero-card p,
+    .muted {
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .icon-box {
+      width: 80px;
+      height: 80px;
+      margin: 32px auto 24px;
+      display: grid;
+      place-items: center;
+      border-radius: 20px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow-sm);
+      color: var(--accent);
+    }
+
+    .icon-box i {
+      width: 40px;
+      height: 40px;
+      stroke-width: 1.5;
+    }
+
+    .section-head,
+    .toolbar,
+    .task-head,
+    .list-head,
+    .task-actions,
+    .quick-actions,
+    .screenshot-actions,
+    .meta-grid,
+    .filter-grid,
+    .form-grid {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .section-head,
+    .task-head,
+    .list-head {
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .section-head {
+      margin-bottom: 24px;
+    }
+
+    .section-head span,
+    .hint {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .meta-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-top: 24px;
+    }
+
+    .metric {
+      padding: 20px;
+      border-radius: 16px;
+      background: var(--bg);
+      border: 1px solid var(--line);
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .metric strong {
+      font-size: 28px;
+      font-weight: 600;
+      margin-bottom: 4px;
+      color: var(--text);
+    }
+
+    .metric span {
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .input,
+    .select,
+    .textarea,
+    .button {
+      width: 100%;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: var(--panel);
+      color: var(--text);
+      padding: 12px 16px;
+      font: inherit;
+      font-size: 15px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .input:focus,
+    .select:focus,
+    .textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 4px rgba(0, 113, 227, 0.1);
+    }
+
+    .textarea {
+      min-height: 120px;
+      resize: vertical;
+    }
+
+    .button {
+      width: auto;
+      cursor: pointer;
+      background: var(--accent);
+      color: #fff;
+      font-weight: 500;
+      border: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .button:hover {
+      background: var(--accent-hover);
+    }
+
+    .button.secondary {
+      background: var(--bg);
+      color: var(--text);
+      border: 1px solid var(--line);
+    }
+
+    .button.secondary:hover {
+      background: #f0f0f2;
+    }
+
+    .button.warn {
+      background: var(--warn);
+      color: #fff;
+    }
+
+    .button.warn:hover {
+      background: #e58e09;
+    }
+
+    .button.danger {
+      background: var(--danger);
+      color: #fff;
+    }
+
+    .button.danger:hover {
+      background: #e5352b;
+    }
+
+    .button i {
+      width: 18px;
+      height: 18px;
+    }
+
+    .filter-grid {
+      display: grid;
+      grid-template-columns: 1.5fr 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr auto auto;
+      gap: 12px;
+      margin-bottom: 24px;
+      background: var(--bg);
+      padding: 20px;
+      border-radius: 16px;
+      border: 1px solid var(--line);
+    }
+
+    .task-list,
+    .list-column {
+      display: grid;
+      gap: 16px;
+    }
+
+    .card,
+    .task-card,
+    .list-card {
+      padding: 20px;
+      border-radius: 16px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow-sm);
+      transition: box-shadow 0.2s;
+    }
+
+    .task-card:hover,
+    .list-card:hover {
+      box-shadow: var(--shadow-md);
+    }
+
+    .task-title {
+      font-size: 17px;
+      font-weight: 500;
+      margin-bottom: 8px;
+      color: var(--text);
+    }
+
+    .chips {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 16px;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 10px;
+      border-radius: 8px;
+      background: var(--bg);
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 500;
+      border: 1px solid var(--line);
+    }
+
+    .chip i {
+      width: 14px;
+      height: 14px;
+    }
+
+    .chip.high {
+      background: rgba(255, 59, 48, 0.08);
+      color: var(--danger);
+      border-color: rgba(255, 59, 48, 0.2);
+    }
+
+    .chip.done {
+      background: rgba(52, 199, 89, 0.08);
+      color: var(--ok);
+      border-color: rgba(52, 199, 89, 0.2);
+    }
+
+    .chip.warn {
+      background: rgba(255, 159, 10, 0.08);
+      color: #d08200;
+      border-color: rgba(255, 159, 10, 0.2);
+    }
+
+    .mini-btn {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 6px 12px;
+      cursor: pointer;
+      background: var(--panel);
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+
+    .mini-btn i {
+      width: 14px;
+      height: 14px;
+    }
+
+    .mini-btn:hover {
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    .mini-btn.ok:hover {
+      color: var(--ok);
+      border-color: var(--ok);
+      background: rgba(52, 199, 89, 0.05);
+    }
+
+    .mini-btn.warn:hover {
+      color: var(--warn);
+      border-color: var(--warn);
+      background: rgba(255, 159, 10, 0.05);
+    }
+
+    .mini-btn.danger:hover {
+      color: var(--danger);
+      border-color: var(--danger);
+      background: rgba(255, 59, 48, 0.05);
+    }
+
+    .quick-note-box,
+    .screenshot-box {
+      display: grid;
+      gap: 16px;
+    }
+
+    .drop-zone {
+      min-height: 220px;
+      display: grid;
+      place-items: center;
+      border-radius: 16px;
+      border: 2px dashed var(--line);
+      background: var(--bg);
+      color: var(--muted);
+      text-align: center;
+      padding: 24px;
+      transition: all 0.2s;
+      cursor: pointer;
+    }
+
+    .drop-zone:hover {
+      border-color: var(--muted);
+    }
+
+    .drop-zone.dragover {
+      border-color: var(--accent);
+      background: rgba(0, 113, 227, 0.04);
+      color: var(--accent);
+    }
+
+    .drop-zone-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .drop-zone-content i {
+      width: 48px;
+      height: 48px;
+      stroke-width: 1;
+      color: inherit;
+    }
+
+    .drop-zone img {
+      width: 100%;
+      max-height: 360px;
+      object-fit: contain;
+      display: block;
+      border-radius: 12px;
+    }
+
+    .empty {
+      padding: 40px 20px;
+      text-align: center;
+      color: var(--muted);
+      background: var(--bg);
+      border: 1px dashed var(--line);
+      border-radius: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .empty i {
+      width: 32px;
+      height: 32px;
+      opacity: 0.5;
+    }
+
+    .details-img {
+      width: 100%;
+      max-height: 260px;
+      object-fit: cover;
+      border-radius: 12px;
+      margin-top: 16px;
+      border: 1px solid var(--line);
+    }
+
+    details {
+      margin-top: 16px;
+    }
+
+    details summary {
+      cursor: pointer;
+      color: var(--accent);
+      font-size: 14px;
+      font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      user-select: none;
+    }
+
+    details summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .digest-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .digest-item i {
+      width: 16px;
+      height: 16px;
+      color: var(--accent);
+      flex-shrink: 0;
+      margin-top: 4px;
+    }
+
+    @media (max-width: 1120px) {
+      .hero,
+      .main-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .meta-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .filter-grid,
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .shell {
+        width: 100%;
+        padding: 24px 16px;
+      }
+
+      .meta-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .content {
+        padding: 24px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="glanceCanvas"></canvas>
+  <div class="shell">
+    <div class="status-bar" id="statusBar"></div>
+
+    <section class="hero">
+      <div class="panel content hero-card">
+        <div>
+          <div class="brand"><i data-lucide="aperture"></i>Glance Web</div>
+          <h1>专注于效率与极简</h1>
+          <p>这一版去除了冗余元素，采用了更为优雅、专注的布局设计。任务管理、搜索筛选、编辑、截图录入、快速记录、导入导出和日程摘要，一切井然有序。</p>
+        </div>
+        <div class="icon-box"><i data-lucide="sparkles"></i></div>
+        <p class="muted">没有多余的干扰，只有纯粹的工作流。确保桌面与移动端都能提供一致、高级的专业体验。</p>
+      </div>
+
+      <div class="panel content">
+        <div class="section-head">
+          <div>
+            <h2>当前概览</h2>
+            <span>实时同步自 Node.js 后端数据</span>
+          </div>
+          <i data-lucide="activity" style="color: var(--muted); width: 24px; height: 24px;"></i>
+        </div>
+        <div class="meta-grid" id="metrics"></div>
+      </div>
+    </section>
+
+    <section class="main-grid">
+      <div class="stack">
+        <section class="panel content">
+          <div class="section-head">
+            <div>
+              <h2>任务池</h2>
+              <span>高效管理您的核心待办事项</span>
+            </div>
+            <div class="toolbar">
+              <button class="button secondary" id="refreshButton" type="button"><i data-lucide="refresh-cw"></i>刷新</button>
+              <button class="button secondary" id="exportButton" type="button"><i data-lucide="download"></i>导出</button>
+              <button class="button secondary" id="importMergeButton" type="button"><i data-lucide="plus-circle"></i>合并导入</button>
+              <button class="button warn" id="importReplaceButton" type="button"><i data-lucide="upload"></i>覆盖导入</button>
+              <button class="button danger" id="clearCompletedButton" type="button"><i data-lucide="trash-2"></i>清理已完成</button>
+              <input id="importInput" type="file" accept="application/json" hidden>
+            </div>
+          </div>
+
+          <div class="filter-grid">
+            <input class="input" id="searchInput" placeholder="搜索任务名称、来源或日期...">
+            <select class="select" id="statusFilter">
+              <option value="all">全部状态</option>
+              <option value="pending">仅看待办</option>
+              <option value="completed">仅看已完成</option>
+            </select>
+            <select class="select" id="priorityFilter">
+              <option value="all">全部优先级</option>
+              <option value="1">高优先级</option>
+              <option value="2">中优先级</option>
+              <option value="3">低优先级</option>
+            </select>
+          </div>
+
+          <form class="form-grid" id="taskForm">
+            <input class="input" id="taskInput" placeholder="输入新的待办事项，例如：整理接口文档..." required>
+            <input class="input" id="deadlineInput" type="datetime-local">
+            <select class="select" id="priorityInput">
+              <option value="1">高优先级</option>
+              <option value="2" selected>中优先级</option>
+              <option value="3">低优先级</option>
+            </select>
+            <button class="button" id="taskSubmitButton" type="submit"><i data-lucide="plus"></i>新增</button>
+            <button class="button secondary" id="taskCancelButton" type="button" hidden><i data-lucide="x"></i>取消</button>
+          </form>
+
+          <div class="task-list" id="taskList"></div>
+        </section>
+
+        <section class="panel content">
+          <div class="section-head">
+            <div>
+              <h2>视觉捕捉</h2>
+              <span>支持拖拽上传截图，利用启发式分析自动生成任务</span>
+            </div>
+            <i data-lucide="camera" style="color: var(--muted); width: 24px; height: 24px;"></i>
+          </div>
+          <div class="screenshot-box">
+            <div class="drop-zone" id="dropZone">
+              <div class="drop-zone-content" id="dropZoneText">
+                <i data-lucide="image-plus"></i>
+                <span>点击、拖拽或粘贴截图到此区域</span>
+              </div>
+            </div>
+            <input id="screenshotInput" type="file" accept="image/*" hidden>
+            <textarea class="textarea" id="screenshotNotes" placeholder="可选：添加上下文备注，例如“修复设计稿中按钮的边距问题”"></textarea>
+            <div class="screenshot-actions">
+              <button class="button" id="analyzeButton" type="button"><i data-lucide="wand-2"></i>分析并生成任务</button>
+              <button class="button secondary" id="clearScreenshotButton" type="button"><i data-lucide="eraser"></i>清空</button>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <div class="stack">
+        <section class="panel content">
+          <div class="section-head">
+            <div>
+              <h3>快速记录</h3>
+              <span>捕捉稍纵即逝的想法与上下文</span>
+            </div>
+            <i data-lucide="edit-3" style="color: var(--muted); width: 20px; height: 20px;"></i>
+          </div>
+          <div class="quick-note-box">
+            <textarea class="textarea" id="quickNoteInput" placeholder="例如：下午三点与产品团队确认上线流程..."></textarea>
+            <div class="quick-actions">
+              <button class="button" id="quickNoteButton" type="button"><i data-lucide="send"></i>记录到活动流</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel content">
+          <div class="section-head">
+            <div>
+              <h3>日程摘要</h3>
+              <span>基于当前状态智能提炼的专注建议</span>
+            </div>
+            <i data-lucide="sun" style="color: var(--muted); width: 20px; height: 20px;"></i>
+          </div>
+          <div class="list-column" id="digestList"></div>
+        </section>
+
+        <section class="panel content">
+          <div class="section-head">
+            <div>
+              <h3>候选任务</h3>
+              <span>从近期活动推导的潜在待办</span>
+            </div>
+            <i data-lucide="list-todo" style="color: var(--muted); width: 20px; height: 20px;"></i>
+          </div>
+          <div class="list-column" id="candidateList"></div>
+        </section>
+
+        <section class="panel content">
+          <div class="section-head">
+            <div>
+              <h3>活动记录</h3>
+              <span>操作轨迹与变更历史</span>
+            </div>
+            <i data-lucide="history" style="color: var(--muted); width: 20px; height: 20px;"></i>
+          </div>
+          <div class="list-column" id="activityList"></div>
+        </section>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const state = {
+      dashboard: null,
+      editingTaskId: '',
+      screenshotData: '',
+      importMode: 'merge',
+      filters: {
+        query: '',
+        status: 'all',
+        priority: 'all',
+      },
+    };
+
+    const statusBar = document.getElementById('statusBar');
+    const metrics = document.getElementById('metrics');
+    const taskList = document.getElementById('taskList');
+    const digestList = document.getElementById('digestList');
+    const candidateList = document.getElementById('candidateList');
+    const activityList = document.getElementById('activityList');
+    const taskForm = document.getElementById('taskForm');
+    const taskInput = document.getElementById('taskInput');
+    const deadlineInput = document.getElementById('deadlineInput');
+    const priorityInput = document.getElementById('priorityInput');
+    const taskSubmitButton = document.getElementById('taskSubmitButton');
+    const taskCancelButton = document.getElementById('taskCancelButton');
+    const searchInput = document.getElementById('searchInput');
+    const statusFilter = document.getElementById('statusFilter');
+    const priorityFilter = document.getElementById('priorityFilter');
+    const quickNoteInput = document.getElementById('quickNoteInput');
+    const screenshotInput = document.getElementById('screenshotInput');
+    const screenshotNotes = document.getElementById('screenshotNotes');
+    const dropZone = document.getElementById('dropZone');
+    const importInput = document.getElementById('importInput');
+
+    async function requestJson(url, options = {}) {
+      const response = await fetch(url, {
+        headers: {
+          'Content-Type': 'application/json',
+          ...(options.headers || {}),
+        },
+        ...options,
+      });
+      if (response.status === 204) return null;
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || '请求失败');
+      return data;
+    }
+
+    function showStatus(message, type = 'info') {
+      statusBar.textContent = message;
+      statusBar.className = 'status-bar show' + (type === 'error' ? ' error' : '');
+      window.clearTimeout(showStatus.timer);
+      showStatus.timer = window.setTimeout(() => {
+        statusBar.className = 'status-bar';
+      }, 2800);
+    }
+
+    function escapeHtml(text) {
+      return String(text || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function formatTime(value) {
+      if (!value) return '未设置';
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return value;
+      return date.toLocaleString('zh-CN', {
+        year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit',
+      });
+    }
+
+    function formatLocalInputValue(value) {
+      if (!value) return '';
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return '';
+      const offset = date.getTimezoneOffset() * 60000;
+      return new Date(date.getTime() - offset).toISOString().slice(0, 16);
+    }
+
+    function getPriorityLabel(priority) {
+      if (Number(priority) === 1) return '高优先级';
+      if (Number(priority) === 3) return '低优先级';
+      return '中优先级';
+    }
+
+    function getVisibleTasks() {
+      if (!state.dashboard) return [];
+      return state.dashboard.tasks.filter((task) => {
+        if (state.filters.status !== 'all' && task.status !== state.filters.status) return false;
+        if (state.filters.priority !== 'all' && String(task.priority) !== state.filters.priority) return false;
+        if (state.filters.query) {
+          const haystack = `${task.task} ${task.deadline} ${task.source}`.toLowerCase();
+          return haystack.includes(state.filters.query.toLowerCase());
+        }
+        return true;
+      });
+    }
+
+    function renderMetrics() {
+      if (!state.dashboard) {
+        metrics.innerHTML = '';
+        return;
+      }
+      const stats = state.dashboard.stats;
+      metrics.innerHTML = `
+        <div class="metric"><strong>${stats.pending}</strong><span>待处理任务</span></div>
+        <div class="metric"><strong>${stats.completed}</strong><span>已完成任务</span></div>
+        <div class="metric"><strong>${stats.highPriority}</strong><span>高优先级任务</span></div>
+        <div class="metric"><strong>${stats.activities}</strong><span>活动记录数</span></div>
+        <div class="metric"><strong>${state.dashboard.candidates.length}</strong><span>候选任务数</span></div>
+        <div class="metric"><strong>${state.screenshotData ? '已缓存' : '未选择'}</strong><span>截图状态</span></div>
+      `;
+    }
+
+    function renderTaskFormState() {
+      const isEditing = Boolean(state.editingTaskId);
+      taskSubmitButton.innerHTML = isEditing ? '<i data-lucide="save"></i>保存' : '<i data-lucide="plus"></i>新增';
+      taskCancelButton.hidden = !isEditing;
+      taskInput.placeholder = isEditing ? '编辑当前任务...' : '输入新的待办事项，例如：整理接口文档...';
+      lucide.createIcons({ root: taskForm });
+    }
+
+    function renderTasks() {
+      const tasks = getVisibleTasks();
+      if (tasks.length === 0) {
+        taskList.innerHTML = '<div class="empty"><i data-lucide="inbox"></i>当前筛选条件下没有任务</div>';
+        return;
+      }
+      taskList.innerHTML = tasks.map((task) => {
+        const isCompleted = task.status === 'completed';
+        const screenshotView = task.screenshot
+          ? `<details><summary><i data-lucide="image"></i>查看关联截图</summary><img class="details-img" src="${task.screenshot}" alt="任务截图"></details>`
+          : '';
+        const priorityIcon = task.priority === 1 ? 'alert-circle' : (task.priority === 3 ? 'arrow-down' : 'minus');
+        const statusIcon = isCompleted ? 'check-circle-2' : 'clock';
+
+        return `
+          <article class="task-card">
+            <div class="task-head">
+              <div>
+                <h3 class="task-title">${escapeHtml(task.task)}</h3>
+                <div class="muted" style="display:flex;align-items:center;gap:6px;margin-bottom:4px;"><i data-lucide="calendar" style="width:14px;height:14px;"></i>截止：${escapeHtml(formatTime(task.deadline))}</div>
+                <div class="muted" style="display:flex;align-items:center;gap:6px;"><i data-lucide="info" style="width:14px;height:14px;"></i>来源：${escapeHtml(task.source || 'manual')} · 更新：${escapeHtml(formatTime(task.updated_at))}</div>
+              </div>
+              <div class="chips">
+                <span class="chip ${task.priority === 1 ? 'high' : ''}"><i data-lucide="${priorityIcon}"></i>${escapeHtml(getPriorityLabel(task.priority))}</span>
+                <span class="chip ${isCompleted ? 'done' : 'warn'}"><i data-lucide="${statusIcon}"></i>${isCompleted ? '已完成' : '待处理'}</span>
+              </div>
+            </div>
+            ${screenshotView}
+            <div class="task-actions" style="margin-top: 20px;">
+              <button class="mini-btn warn" data-action="edit" data-id="${task.id}"><i data-lucide="edit-2"></i>编辑</button>
+              <button class="mini-btn ok" data-action="toggle" data-id="${task.id}"><i data-lucide="${isCompleted ? 'rotate-ccw' : 'check'}"></i>${isCompleted ? '恢复' : '完成'}</button>
+              <button class="mini-btn danger" data-action="delete" data-id="${task.id}"><i data-lucide="trash"></i>删除</button>
+            </div>
+          </article>
+        `;
+      }).join('');
+    }
+
+    function renderDigest() {
+      if (!state.dashboard) {
+        digestList.innerHTML = '';
+        return;
+      }
+      const sections = [
+        { title: '概览', items: state.dashboard.digest.overview },
+        { title: '安排', items: state.dashboard.digest.schedule },
+        { title: '洞察', items: state.dashboard.digest.insights },
+      ];
+      digestList.innerHTML = sections.map((section) => {
+        const items = section.items.map((item) => `<div class="digest-item"><i data-lucide="check"></i><span class="muted">${escapeHtml(item)}</span></div>`).join('');
+        return `<article class="list-card"><div class="list-head"><strong>${section.title}</strong></div>${items}</article>`;
+      }).join('');
+    }
+
+    function renderCandidates() {
+      if (!state.dashboard || state.dashboard.candidates.length === 0) {
+        candidateList.innerHTML = '<div class="empty"><i data-lucide="inbox"></i>当前没有新的候选任务</div>';
+        return;
+      }
+      candidateList.innerHTML = state.dashboard.candidates.map((item) => {
+        const priorityIcon = item.priority === 1 ? 'alert-circle' : 'minus';
+        return `
+          <article class="list-card">
+            <div class="list-head">
+              <strong>${escapeHtml(item.task)}</strong>
+              <span class="chip ${item.priority === 1 ? 'high' : ''}"><i data-lucide="${priorityIcon}"></i>${escapeHtml(getPriorityLabel(item.priority))}</span>
+            </div>
+            <div class="muted" style="margin: 12px 0 16px;">${escapeHtml(item.reason)}</div>
+            <div class="task-actions">
+              <button class="mini-btn ok" data-candidate="${encodeURIComponent(item.task)}" data-priority="${item.priority}"><i data-lucide="plus"></i>采纳</button>
+            </div>
+          </article>
+        `;
+      }).join('');
+    }
+
+    function renderActivities() {
+      if (!state.dashboard || state.dashboard.activities.length === 0) {
+        activityList.innerHTML = '<div class="empty"><i data-lucide="inbox"></i>还没有活动记录</div>';
+        return;
+      }
+      activityList.innerHTML = state.dashboard.activities.slice(0, 12).map((activity) => {
+        return `
+          <article class="list-card">
+            <div class="list-head">
+              <strong>${escapeHtml(activity.title)}</strong>
+              <span class="hint">${escapeHtml(formatTime(activity.created_at))}</span>
+            </div>
+            <div class="muted" style="margin-top: 12px; display:flex; align-items:center; gap:6px;"><i data-lucide="tag" style="width:14px;height:14px;"></i>${escapeHtml(activity.source)}</div>
+            <div class="muted" style="margin-top: 6px;">${escapeHtml(activity.details || '无详情')}</div>
+          </article>
+        `;
+      }).join('');
+    }
+
+    function renderAll() {
+      renderMetrics();
+      renderTaskFormState();
+      renderTasks();
+      renderDigest();
+      renderCandidates();
+      renderActivities();
+      lucide.createIcons();
+    }
+
+    async function loadDashboard() {
+      state.dashboard = await requestJson('/api/dashboard');
+      renderAll();
+    }
+
+    function resetTaskForm() {
+      state.editingTaskId = '';
+      taskInput.value = '';
+      deadlineInput.value = '';
+      priorityInput.value = '2';
+      renderTaskFormState();
+    }
+
+    function startEditTask(taskId) {
+      if (!state.dashboard) return;
+      const task = state.dashboard.tasks.find((item) => item.id === taskId);
+      if (!task) return;
+      state.editingTaskId = task.id;
+      taskInput.value = task.task;
+      deadlineInput.value = formatLocalInputValue(task.deadline);
+      priorityInput.value = String(task.priority);
+      renderTaskFormState();
+      taskInput.focus();
+    }
+
+    async function handleTaskSubmit(event) {
+      event.preventDefault();
+      const payload = {
+        task: taskInput.value,
+        deadline: deadlineInput.value ? new Date(deadlineInput.value).toISOString() : '',
+        priority: Number(priorityInput.value),
+        source: 'manual',
+      };
+      if (state.editingTaskId) {
+        await requestJson(`/api/tasks/${state.editingTaskId}`, { method: 'PATCH', body: JSON.stringify(payload) });
+        showStatus('任务已更新');
+      } else {
+        await requestJson('/api/tasks', { method: 'POST', body: JSON.stringify(payload) });
+        showStatus('任务已新增');
+      }
+      resetTaskForm();
+      await loadDashboard();
+    }
+
+    async function handleTaskAction(event) {
+      const button = event.target.closest('[data-action]');
+      if (!button) return;
+      const taskId = button.dataset.id;
+      const action = button.dataset.action;
+      if (action === 'edit') {
+        startEditTask(taskId);
+        return;
+      }
+      if (action === 'toggle') {
+        await requestJson(`/api/tasks/${taskId}/toggle`, { method: 'POST' });
+        showStatus('任务状态已更新');
+      }
+      if (action === 'delete') {
+        await requestJson(`/api/tasks/${taskId}`, { method: 'DELETE' });
+        if (state.editingTaskId === taskId) resetTaskForm();
+        showStatus('任务已删除');
+      }
+      await loadDashboard();
+    }
+
+    async function handleCandidateAction(event) {
+      const button = event.target.closest('[data-candidate]');
+      if (!button) return;
+      await requestJson('/api/tasks', {
+        method: 'POST',
+        body: JSON.stringify({
+          task: decodeURIComponent(button.dataset.candidate),
+          priority: Number(button.dataset.priority || 2),
+          source: 'candidate',
+        }),
+      });
+      showStatus('候选任务已采纳');
+      await loadDashboard();
+    }
+
+    async function handleQuickNoteSubmit() {
+      const value = quickNoteInput.value.trim();
+      if (!value) {
+        showStatus('请先填写记录内容', 'error');
+        return;
+      }
+      await requestJson('/api/activities', {
+        method: 'POST',
+        body: JSON.stringify({ source: 'manual', title: '记录灵感', details: value }),
+      });
+      quickNoteInput.value = '';
+      showStatus('已写入活动流');
+      await loadDashboard();
+    }
+
+    async function handleExport() {
+      const data = await requestJson('/api/export');
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `glance-export-${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}.json`;
+      link.click();
+      URL.revokeObjectURL(url);
+      showStatus('数据已导出');
+    }
+
+    function readFileAsText(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result || ''));
+        reader.onerror = reject;
+        reader.readAsText(file, 'utf-8');
+      });
+    }
+
+    function readFileAsDataUrl(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result || ''));
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    async function handleImportFile() {
+      const file = importInput.files && importInput.files[0];
+      if (!file) return;
+      const text = await readFileAsText(file);
+      const data = JSON.parse(text);
+      const result = await requestJson('/api/import', {
+        method: 'POST',
+        body: JSON.stringify({ mode: state.importMode, data }),
+      });
+      importInput.value = '';
+      state.dashboard = result.dashboard;
+      renderAll();
+      showStatus(state.importMode === 'replace' ? '数据已覆盖导入' : '数据已合并导入');
+    }
+
+    function renderScreenshotPreview() {
+      if (!state.screenshotData) {
+        dropZone.innerHTML = `
+          <div class="drop-zone-content" id="dropZoneText">
+            <i data-lucide="image-plus"></i>
+            <span>点击、拖拽或粘贴截图到此区域</span>
+          </div>
+        `;
+        lucide.createIcons({ root: dropZone });
+        return;
+      }
+      dropZone.innerHTML = `<img src="${state.screenshotData}" alt="截图预览">`;
+    }
+
+    function clearScreenshot() {
+      state.screenshotData = '';
+      screenshotInput.value = '';
+      renderScreenshotPreview();
+    }
+
+    async function handleScreenshotFile(file) {
+      if (!file || !file.type.startsWith('image/')) {
+        showStatus('请选择图片文件', 'error');
+        return;
+      }
+      state.screenshotData = await readFileAsDataUrl(file);
+      renderScreenshotPreview();
+      showStatus('截图已加载');
+    }
+
+    async function handleScreenshotAnalyze() {
+      if (!state.screenshotData) {
+        showStatus('请先选择截图', 'error');
+        return;
+      }
+      const result = await requestJson('/api/analyze-screenshot', {
+        method: 'POST',
+        body: JSON.stringify({ imageData: state.screenshotData, notes: screenshotNotes.value }),
+      });
+      clearScreenshot();
+      screenshotNotes.value = '';
+      showStatus(result.message || '截图已录入');
+      await loadDashboard();
+    }
+
+    function bindEvents() {
+      taskForm.addEventListener('submit', async (event) => {
+        try { await handleTaskSubmit(event); } catch (error) { showStatus(error.message, 'error'); }
+      });
+      taskCancelButton.addEventListener('click', resetTaskForm);
+      taskList.addEventListener('click', async (event) => {
+        try { await handleTaskAction(event); } catch (error) { showStatus(error.message, 'error'); }
+      });
+      candidateList.addEventListener('click', async (event) => {
+        try { await handleCandidateAction(event); } catch (error) { showStatus(error.message, 'error'); }
+      });
+      document.getElementById('refreshButton').addEventListener('click', async () => {
+        try { await loadDashboard(); showStatus('数据已刷新'); } catch (error) { showStatus(error.message, 'error'); }
+      });
+      document.getElementById('quickNoteButton').addEventListener('click', async () => {
+        try { await handleQuickNoteSubmit(); } catch (error) { showStatus(error.message, 'error'); }
+      });
+      document.getElementById('exportButton').addEventListener('click', async () => {
+        try { await handleExport(); } catch (error) { showStatus(error.message, 'error'); }
+      });
+      document.getElementById('importMergeButton').addEventListener('click', () => { state.importMode = 'merge'; importInput.click(); });
+      document.getElementById('importReplaceButton').addEventListener('click', () => { state.importMode = 'replace'; importInput.click(); });
+      importInput.addEventListener('change', async () => {
+        try { await handleImportFile(); } catch (error) { showStatus('导入失败，请检查 JSON 文件格式', 'error'); }
+      });
+      document.getElementById('clearCompletedButton').addEventListener('click', async () => {
+        try {
+          const result = await requestJson('/api/tasks/clear-completed', { method: 'POST' });
+          showStatus(`已清理 ${result.removedCount} 条已完成任务`);
+          await loadDashboard();
+        } catch (error) { showStatus(error.message, 'error'); }
+      });
+      searchInput.addEventListener('input', () => { state.filters.query = searchInput.value.trim(); renderTasks(); lucide.createIcons({ root: taskList }); });
+      statusFilter.addEventListener('change', () => { state.filters.status = statusFilter.value; renderTasks(); lucide.createIcons({ root: taskList }); });
+      priorityFilter.addEventListener('change', () => { state.filters.priority = priorityFilter.value; renderTasks(); lucide.createIcons({ root: taskList }); });
+      
+      dropZone.addEventListener('click', () => screenshotInput.click());
+      screenshotInput.addEventListener('change', async () => {
+        try { const file = screenshotInput.files && screenshotInput.files[0]; await handleScreenshotFile(file); }
+        catch (error) { showStatus('截图加载失败', 'error'); }
+      });
+      dropZone.addEventListener('dragover', (event) => { event.preventDefault(); dropZone.classList.add('dragover'); });
+      dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+      dropZone.addEventListener('drop', async (event) => {
+        event.preventDefault(); dropZone.classList.remove('dragover');
+        try { const file = event.dataTransfer.files && event.dataTransfer.files[0]; await handleScreenshotFile(file); }
+        catch (error) { showStatus('截图加载失败', 'error'); }
+      });
+      document.addEventListener('paste', async (event) => {
+        try {
+          const items = event.clipboardData && event.clipboardData.items;
+          if (!items) return;
+          const imageItem = [...items].find((item) => item.type.startsWith('image/'));
+          if (!imageItem) return;
+          const file = imageItem.getAsFile();
+          await handleScreenshotFile(file);
+        } catch (error) { showStatus('粘贴截图失败', 'error'); }
+      });
+      document.getElementById('analyzeButton').addEventListener('click', async () => {
+        try { await handleScreenshotAnalyze(); } catch (error) { showStatus(error.message, 'error'); }
+      });
+      document.getElementById('clearScreenshotButton').addEventListener('click', () => { clearScreenshot(); showStatus('截图已清空'); });
+    }
+
+    async function init() {
+      lucide.createIcons();
+      bindEvents();
+      renderTaskFormState();
+      renderScreenshotPreview();
+      try { await loadDashboard(); } catch (error) { showStatus('后端未启动，请先运行 start_dev.ps1', 'error'); }
+    }
+
+    init();
+  </script>
+
+  <!-- 流光粒子背景特效 -->
+  <script>
+    (function initParticles() {
+      const canvas = document.getElementById('glanceCanvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      let width, height;
+      let particles = [];
+      let mouse = { x: -1000, y: -1000 };
+
+      function resize() {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+        createParticles();
+      }
+
+      window.addEventListener('resize', resize);
+
+      window.addEventListener('mousemove', (e) => {
+        mouse.x = e.clientX;
+        mouse.y = e.clientY;
+      });
+
+      window.addEventListener('mouseout', () => {
+        mouse.x = -1000;
+        mouse.y = -1000;
+      });
+
+      class Particle {
+        constructor() {
+          this.x = Math.random() * width;
+          this.y = Math.random() * height;
+          this.size = Math.random() * 1.5 + 0.5;
+          this.speedX = (Math.random() - 0.5) * 0.8;
+          this.speedY = (Math.random() - 0.5) * 0.8;
+        }
+
+        update() {
+          this.x += this.speedX;
+          this.y += this.speedY;
+
+          if (this.x > width) this.x = 0;
+          else if (this.x < 0) this.x = width;
+          if (this.y > height) this.y = 0;
+          else if (this.y < 0) this.y = height;
+        }
+
+        draw() {
+          ctx.beginPath();
+          ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+          ctx.fillStyle = 'rgba(0, 113, 227, 0.4)';
+          ctx.fill();
+        }
+      }
+
+      function createParticles() {
+        particles = [];
+        const num = Math.min(Math.floor((width * height) / 12000), 120);
+        for (let i = 0; i < num; i++) {
+          particles.push(new Particle());
+        }
+      }
+
+      function animate() {
+        ctx.clearRect(0, 0, width, height);
+        
+        for (let i = 0; i < particles.length; i++) {
+          particles[i].update();
+          particles[i].draw();
+          
+          // 鼠标交互：引力与连线
+          const dxMouse = particles[i].x - mouse.x;
+          const dyMouse = particles[i].y - mouse.y;
+          const distMouse = Math.sqrt(dxMouse * dxMouse + dyMouse * dyMouse);
+          
+          if (distMouse < 180) {
+            ctx.beginPath();
+            ctx.moveTo(particles[i].x, particles[i].y);
+            ctx.lineTo(mouse.x, mouse.y);
+            ctx.strokeStyle = \`rgba(0, 113, 227, \${0.5 * (1 - distMouse / 180)})\`;
+            ctx.lineWidth = 1;
+            ctx.stroke();
+            
+            // 轻微吸引效果
+            particles[i].x -= dxMouse * 0.015;
+            particles[i].y -= dyMouse * 0.015;
+          }
+          
+          // 粒子之间的连线
+          for (let j = i + 1; j < particles.length; j++) {
+            const dx = particles[i].x - particles[j].x;
+            const dy = particles[i].y - particles[j].y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            
+            if (dist < 100) {
+              ctx.beginPath();
+              ctx.moveTo(particles[i].x, particles[i].y);
+              ctx.lineTo(particles[j].x, particles[j].y);
+              ctx.strokeStyle = \`rgba(0, 113, 227, \${0.2 * (1 - dist / 100)})\`;
+              ctx.lineWidth = 0.5;
+              ctx.stroke();
+            }
+          }
+        }
+        requestAnimationFrame(animate);
+      }
+
+      resize();
+      animate();
+    })();
+  </script>
+</body>
+</html>
