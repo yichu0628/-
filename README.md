@@ -102,6 +102,51 @@ GLANCE_MQTT_PORT=1883
 - `GLANCE_DATA_FILE`：本地 JSON 数据文件位置
 - 其余历史变量暂时保留，便于后续继续接回原能力
 
+## 云端部署
+
+### 方案 A：推荐，整站直接部署到 Render
+
+这个仓库当前是一个 Node.js + Express 的前后端一体项目：
+
+- `index.html` 和 `demo.html` 由 `backend/server.js` 直接托管
+- 前端体验页 `demo.html` 默认请求同域名下的 `/api/*`
+- 因此如果你只想最快上线，最稳妥的方式是整个仓库直接部署到 Render
+
+Render 配置建议：
+
+- Build Command：`pnpm install --frozen-lockfile`
+- Start Command：`pnpm start`
+- 环境变量：至少配置 `GLANCE_DATA_FILE=./data/web-data.json`
+
+部署完成后，可直接访问：
+
+- 首页：`https://你的服务.onrender.com/`
+- 体验页：`https://你的服务.onrender.com/demo`
+
+### 方案 B：Vercel 部署前端，Render 部署后端
+
+如果你一定要拆成 Vercel + Render，请按下面方式：
+
+1. 先把后端部署到 Render，确认 `https://你的服务.onrender.com/api/health` 可访问
+2. 修改根目录 `config.js`
+3. 将 `apiBase` 改成你的 Render 地址，例如 `https://你的服务.onrender.com`
+4. 提交并推送代码，Vercel 会自动重新部署静态前端
+
+示例：
+
+```js
+window.GLANCE_CONFIG = {
+  apiBase: 'https://your-backend.onrender.com',
+};
+```
+
+说明：
+
+- `index.html` 是展示首页
+- `demo.html` 是真实业务页面
+- `vercel.json` 已配置为 `cleanUrls`，所以线上可直接访问 `/demo`
+- 不要再把所有路径重写到 `index.html`，否则 `demo` 页面和接口链路都会异常
+
 ## API 概览
 
 - `GET /api/dashboard`：获取首页完整数据

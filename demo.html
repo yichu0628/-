@@ -752,6 +752,7 @@
     </section>
   </div>
 
+  <script src="./config.js"></script>
   <script>
     const state = {
       dashboard: null,
@@ -785,9 +786,38 @@
     const screenshotNotes = document.getElementById('screenshotNotes');
     const dropZone = document.getElementById('dropZone');
     const importInput = document.getElementById('importInput');
+    const apiBase = normalizeApiBase(window.GLANCE_CONFIG && window.GLANCE_CONFIG.apiBase);
 
+    /**
+     * 规范化后端接口基础地址。
+     * @param {string} value - 配置中的接口基础地址。
+     * @returns {string} - 去除末尾斜杠后的地址；为空时返回空字符串。
+     */
+    function normalizeApiBase(value) {
+      const nextValue = String(value || '').trim();
+      return nextValue.replace(/\/+$/, '');
+    }
+
+    /**
+     * 生成最终请求地址。
+     * @param {string} url - 相对或绝对接口地址。
+     * @returns {string} - 可直接发起请求的完整地址。
+     */
+    function buildApiUrl(url) {
+      if (/^https?:\/\//.test(url)) {
+        return url;
+      }
+      return `${apiBase}${url}`;
+    }
+
+    /**
+     * 发送 JSON 请求并返回响应结果。
+     * @param {string} url - 相对或绝对接口地址。
+     * @param {RequestInit} [options={}] - fetch 请求配置。
+     * @returns {Promise<any>} - 解析后的 JSON 数据。
+     */
     async function requestJson(url, options = {}) {
-      const response = await fetch(url, {
+      const response = await fetch(buildApiUrl(url), {
         headers: {
           'Content-Type': 'application/json',
           ...(options.headers || {}),
@@ -1237,7 +1267,14 @@
       bindEvents();
       renderTaskFormState();
       renderScreenshotPreview();
-      try { await loadDashboard(); } catch (error) { showStatus('后端未启动，请先运行 start_dev.ps1', 'error'); }
+      try {
+        await loadDashboard();
+      } catch (error) {
+        const message = apiBase
+          ? `后端连接失败，请检查 config.js 中的 apiBase 是否可访问`
+          : '后端未启动，请先运行 start_dev.ps1';
+        showStatus(message, 'error');
+      }
     }
 
     init();

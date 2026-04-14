@@ -10,3 +10,4 @@ test_tasks.db
 screenshot_temp.png
 node_modules/
 data/web-data.json
+.vercel/
