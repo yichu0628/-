@@ -22,3 +22,4 @@
 - 新增 `config.js` 运行时配置，支持将 `demo.html` 的接口地址切换到 Render 后端
 - 调整 `vercel.json` 为 `cleanUrls`，避免将全部路径错误重写到首页导致体验页与 API 链路异常
 - 更新 README 云端部署说明，补充 Render 一体部署与 Vercel + Render 分离部署步骤
+- 新增 `vercel-app/` 纯静态前端目录，用于在 Vercel 以独立根目录方式部署首页与体验页

@@ -146,6 +146,8 @@ window.GLANCE_CONFIG = {
 - `demo.html` 是真实业务页面
 - `vercel.json` 已配置为 `cleanUrls`，所以线上可直接访问 `/demo`
 - 不要再把所有路径重写到 `index.html`，否则 `demo` 页面和接口链路都会异常
+- 如果 Vercel 直接从仓库根目录导入失败，请将 Vercel 的 `Root Directory` 改为 `vercel-app`
+- `vercel-app` 是为 Vercel 单独准备的纯静态前端目录，包含 `index.html`、`demo.html`、`config.js` 和独立的 `vercel.json`
 
 ## API 概览
 
